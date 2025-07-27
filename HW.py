@@ -40,10 +40,20 @@ def multiprocessing_worker(file_list, keyword, result_list):
             print(f"Помилка при обробці файлу {file_path}: {e}")
 
 
+def print_results(results, mode, keyword, duration):
+    print(f"\nРезультат для {mode}:")
+    print(f"Час виконання: {duration:.5f} секунд")
+    if not results:
+        print(f"Не знайдено файлів з ключовим словом '{keyword}' у {mode}.")
+    else:
+        for result in results:
+            print({keyword: result})
+
+
 def main(data_dir):
         while True:
 
-            # Отримання ключового слова від користувача
+            # Отримуємо ключове слово від користувача
             keyword = input("Введіть ключове слово для пошуку, або 'exit' для виходу: ")
 
             if keyword.strip():
@@ -52,7 +62,7 @@ def main(data_dir):
 
                 while True:
                     try:
-                        # Отримання кількості потоків/процесів від користувача
+                        # Отримуємо кількість потоків/процесів від користувача
                         num_threads_processes = int(input("Введіть кількість потоків(процесів): "))
                         break
 
@@ -60,25 +70,27 @@ def main(data_dir):
                         print("Будь ласка, введіть число.")
                         continue
 
-                # Перевірка наявності директорії
+                # Перевіряємо, чи існує директорія з даними
                 if not os.path.isdir(data_dir):
                     print(f"Директорія '{data_dir}' не існує.")
                     break
 
+                # Отримуємо список текстових файлів у директорії
                 file_list = [str(Path(data_dir) / f) for f in os.listdir(data_dir) if f.endswith('.txt')]
 
+                # Якщо немає текстових файлів, виводимо повідомлення і завершуємо цикл
                 if not file_list:
                     print(f"У директорії '{data_dir}' не знайдено текстових файлів.")
                     break
 
-                # Розділіть список файлів на частини для обробки потоками
+                # Розділяємо список файлів на частини для потоків/процесів
                 file_parts = split_list_files(file_list, num_threads_processes)
 
                 # Очищення результатів перед кожним запуском
                 thread_results.clear()
                 start_time = time.time()
 
-                # Створіть та запустіть потоки
+                # Створення та запуск потоків
                 threads = []
                 for i in range(num_threads_processes):
                     thread = threading.Thread(target=thread_worker, args=(file_parts[i], keyword))
@@ -90,16 +102,12 @@ def main(data_dir):
                     thread.join()
 
                 end_time = time.time()
-                print(f"\nРезультат для потоків:")
-                print(f"Час виконання: {end_time - start_time:.5f} секунд")
-                if not thread_results:
-                    print(f"Не знайдено файлів з ключовим словом '{keyword}' у потоках.")
-                else:
-                    for result in thread_results:
-                        print({keyword: result})
 
-                # Запускаємо таймер для процесів
-                multiprocessing_results = manager.list()  # Використовуємо менеджер для спільного списку
+                # Виводимо результати для потоків
+                print_results(thread_results, "threading", keyword, end_time - start_time)
+
+                # Очищення результатів перед запуском процесів
+                multiprocessing_results = Manager().list()
                 start_time = time.time()
 
                 # Перевірка кількості процесів, якщо їх більше ніж файлів вставлюємо кількість процесів рівну кількості файлів
@@ -120,17 +128,15 @@ def main(data_dir):
                     process.join()
 
                 end_time = time.time()
-                print(f"\nРезультат для процесів:")
-                print(f"Час виконання: {end_time - start_time:.5f} секунд")
-                if not multiprocessing_results:
-                    print(f"Не знайдено файлів з ключовим словом '{keyword}' у процесах.")
-                else:
-                    for result in multiprocessing_results:
-                        print({keyword: result})
+
+                # Виводимо результати для процесів
+                print_results(multiprocessing_results, "multiprocessing", keyword, end_time - start_time)
 
 
 if __name__ == "__main__":
-    
-    manager = Manager()
+
     data_dir = ("data") # Директорія з текстовими файлами
-    main(data_dir)
+    main(data_dir) # Запуск основної функції
+
+    # Ключові слова для тестування:
+    # python, threading, multiprocessing, file, global, lock, processing, error, logging.
