@@ -10,7 +10,7 @@ lock = threading.Lock()
 
 
 # Розділяємо список файлів на частини для обробки потоками
-def split_list_files(file_list, num_parts):
+def file_list_splitting(file_list, num_parts):
     k, m = divmod(len(file_list), num_parts)
     return [file_list[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(num_parts)]
 
@@ -84,7 +84,7 @@ def main(data_dir):
                     break
 
                 # Розділяємо список файлів на частини для потоків/процесів
-                file_parts = split_list_files(file_list, num_threads_processes)
+                file_parts = file_list_splitting(file_list, num_threads_processes)
 
                 # Очищення результатів перед кожним запуском
                 thread_results.clear()
